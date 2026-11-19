@@ -7,6 +7,7 @@ import validateUrl from './validator.js';
 import initView from './view.js';
 
 const PROXY_URL = 'https://allorigins.hexlet.app/get';
+const UPDATE_INTERVAL = 5000;
 
 const getProxiedUrl = (url) => {
     const proxyUrl = new URL(PROXY_URL);
@@ -14,6 +15,10 @@ const getProxiedUrl = (url) => {
     proxyUrl.searchParams.set('url', url);
     return proxyUrl.toString();
 };
+
+const fetchRss = (url) => axios
+    .get(getProxiedUrl(url))
+    .then((response) => parseRss(response.data.contents));
 
 const getErrorCode = (error) => {
     if (error.isParsingError) {
@@ -31,6 +36,36 @@ const createIdGenerator = () => {
         id += 1;
         return String(id);
     };
+};
+
+const watchFeeds = (state, generateId) => {
+    const promises = state.feeds.map((feed) => fetchRss(feed.url)
+        .then(({ posts }) => {
+            const existingLinks = new Set(
+                state.posts
+                    .filter((post) => post.feedId === feed.id)
+                    .map((post) => post.link),
+            );
+
+            const newPosts = posts
+                .filter((post) => !existingLinks.has(post.link))
+                .map((post) => ({
+                    id: generateId(),
+                    feedId: feed.id,
+                    title: post.title,
+                    link: post.link,
+                    description: post.description,
+                }));
+
+            if (newPosts.length > 0) {
+                state.posts.unshift(...newPosts);
+            }
+        })
+        .catch(() => {}));
+
+    Promise.allSettled(promises).finally(() => {
+        setTimeout(() => watchFeeds(state, generateId), UPDATE_INTERVAL);
+    });
 };
 
 const app = () => {
@@ -52,7 +87,7 @@ const app = () => {
                     error: null,
                 },
                 loadingProcess: {
-                    status: 'idle', // 'idle' | 'loading' | 'success' | 'failed'
+                    status: 'idle',
                     error: null,
                 },
             });
@@ -67,6 +102,7 @@ const app = () => {
             };
 
             initView(state, elements, i18nInstance);
+            setTimeout(() => watchFeeds(state, generateId), UPDATE_INTERVAL);
 
             elements.form.addEventListener('submit', (e) => {
                 e.preventDefault();
@@ -83,8 +119,7 @@ const app = () => {
                         state.loadingProcess.status = 'loading';
                         state.loadingProcess.error = null;
 
-                        return axios.get(getProxiedUrl(validUrl)).then((response) => {
-                            const { feed, posts } = parseRss(response.data.contents);
+                        return fetchRss(validUrl).then(({ feed, posts }) => {
                             const feedId = generateId();
 
                             const normalizedFeed = {
