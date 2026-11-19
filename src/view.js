@@ -108,7 +108,11 @@ const renderPosts = (state, elements, i18nInstance) => {
     const list = document.createElement('ul');
     list.className = 'divide-y divide-gray-200';
 
+    const seenIds = new Set(state.ui.seenPostIds);
+
     state.posts.forEach((post) => {
+        const isSeen = seenIds.has(post.id);
+
         const item = document.createElement('li');
         item.className = 'flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0';
 
@@ -118,14 +122,57 @@ const renderPosts = (state, elements, i18nInstance) => {
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
         link.dataset.id = post.id;
-        link.className = 'font-bold text-blue-600 hover:underline';
+        link.dataset.seen = String(isSeen);
+        link.className = isSeen
+            ? 'font-normal text-gray-500 hover:underline'
+            : 'font-bold text-blue-600 hover:underline';
 
-        item.append(link);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.id = post.id;
+        button.textContent = i18nInstance.t('posts.viewButton');
+        button.className = 'shrink-0 rounded-lg border border-blue-600 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-600 hover:text-white';
+
+        item.append(link, button);
         list.append(item);
     });
 
     card.append(heading, list);
     postsContainer.replaceChildren(card);
+};
+
+const renderModal = (state, elements, i18nInstance) => {
+    const {
+        modal,
+        modalTitle,
+        modalBody,
+        modalLink,
+        modalCloseButton,
+    } = elements;
+
+    const { modalPostId } = state.ui;
+
+    if (!modalPostId) {
+        if (modal.open) {
+            modal.close();
+        }
+        return;
+    }
+
+    const post = state.posts.find((item) => item.id === modalPostId);
+    if (!post) {
+        return;
+    }
+
+    modalTitle.textContent = post.title;
+    modalBody.textContent = post.description;
+    modalLink.href = post.link;
+    modalLink.textContent = i18nInstance.t('modal.readMore');
+    modalCloseButton.textContent = i18nInstance.t('modal.close');
+
+    if (!modal.open) {
+        modal.showModal();
+    }
 };
 
 const initView = (state, elements, i18nInstance) => {
@@ -143,6 +190,11 @@ const initView = (state, elements, i18nInstance) => {
 
     subscribe(state.posts, () => {
         renderPosts(state, elements, i18nInstance);
+    });
+
+    subscribe(state.ui, () => {
+        renderPosts(state, elements, i18nInstance);
+        renderModal(state, elements, i18nInstance);
     });
 };
 

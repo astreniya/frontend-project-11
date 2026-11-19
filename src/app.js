@@ -68,6 +68,12 @@ const watchFeeds = (state, generateId) => {
     });
 };
 
+const markPostAsSeen = (state, postId) => {
+    if (!state.ui.seenPostIds.includes(postId)) {
+        state.ui.seenPostIds.push(postId);
+    }
+};
+
 const app = () => {
     const i18nInstance = i18next.createInstance();
     const generateId = createIdGenerator();
@@ -90,7 +96,14 @@ const app = () => {
                     status: 'idle',
                     error: null,
                 },
+                ui: {
+                    seenPostIds: [],
+                    modalPostId: null,
+                },
             });
+
+            const modal = document.querySelector('#modal');
+            const closeButtons = modal.querySelectorAll('[data-modal-close]');
 
             const elements = {
                 form: document.querySelector('form'),
@@ -99,10 +112,45 @@ const app = () => {
                 feedback: document.querySelector('#feedback'),
                 feedsContainer: document.querySelector('#feeds'),
                 postsContainer: document.querySelector('#posts'),
+                modal,
+                modalTitle: modal.querySelector('#modal-title'),
+                modalBody: modal.querySelector('[data-test="modal-body"]'),
+                modalLink: modal.querySelector('#modal-link'),
+                modalCloseButton: closeButtons[closeButtons.length - 1],
             };
 
             initView(state, elements, i18nInstance);
             setTimeout(() => watchFeeds(state, generateId), UPDATE_INTERVAL);
+
+            elements.postsContainer.addEventListener('click', (e) => {
+                const target = e.target.closest('[data-id]');
+                if (!target) {
+                    return;
+                }
+
+                const { id } = target.dataset;
+                markPostAsSeen(state, id);
+
+                if (target.tagName === 'BUTTON') {
+                    state.ui.modalPostId = id;
+                }
+            });
+
+            closeButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    state.ui.modalPostId = null;
+                });
+            });
+
+            modal.addEventListener('close', () => {
+                state.ui.modalPostId = null;
+            });
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    state.ui.modalPostId = null;
+                }
+            });
 
             elements.form.addEventListener('submit', (e) => {
                 e.preventDefault();

@@ -19,5 +19,9 @@ export default {
             title: 'Посты',
             viewButton: 'Просмотр',
         },
+        modal: {
+            readMore: 'Читать полностью',
+            close: 'Закрыть',
+        },
     },
 };
