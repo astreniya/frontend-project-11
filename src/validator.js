@@ -2,11 +2,11 @@ import * as yup from 'yup';
 
 yup.setLocale({
     string: {
-        url: 'Ссылка должна быть валидным URL',
+        url: 'errors.validation.url',
     },
     mixed: {
-        required: 'Не должно быть пустым',
-        notOneOf: 'RSS уже существует',
+        required: 'errors.validation.required',
+        notOneOf: 'errors.validation.notOneOf',
     },
 });
 
