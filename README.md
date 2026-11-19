@@ -2,6 +2,9 @@
 
 [![hexlet-check](https://github.com/astreniya/frontend-project-11/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/astreniya/frontend-project-11/actions)
 
+### Ссылка на проект (Vercel):
+https://frontend-project-11-dun-one-astreniya.vercel.app/
+
 После проекта вы сможете уверенно работать с DOM, Vite, Tailwind CSS, AJAX, валидациями и деплоить проект
 
 Учебный проект Хекслета: https://ru.hexlet.io/programs/frontend
